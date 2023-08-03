@@ -9,6 +9,7 @@ import (
 )
 
 // This tool creates the sqlite database file from the schema.sql file.
+//
 // It useses golang's SQL package and the sqlite3 driver.
 // Source: https://pkg.go.dev/github.com/mattn/go-sqlite3?utm_source=godoc
 func main() {
