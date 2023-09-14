@@ -1,17 +1,20 @@
 package server
 
 import (
+	"database/sql"
 	"net/http"
 )
 
 type LogicAppServer struct {
+	db *sql.DB
 	http.Handler
 	userHandler *UserHandler
 }
 
-func NewLogicAppServer() *LogicAppServer {
+func NewLogicAppServer(db *sql.DB) *LogicAppServer {
 	las := new(LogicAppServer)
-	las.userHandler = NewUserHandler(&MyUserStore{})
+	las.db = db
+	las.userHandler = NewUserHandler(&MyUserStore{db: db})
 
 	router := http.NewServeMux()
 	router.Handle("/user/", http.StripPrefix("/user", las.userHandler))
