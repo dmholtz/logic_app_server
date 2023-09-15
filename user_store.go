@@ -61,7 +61,7 @@ func (us *MyUserStore) Login(credentials Credentials) (string, error) {
 
 	if err := row.Scan(&id, &username, &hashedPwd, &salt); err == sql.ErrNoRows {
 		// user does not exist
-		return "", errors.New("Invalid username or password1")
+		return "", errors.New("Invalid username or password")
 	} else if err != nil {
 		return "", err
 	}
@@ -73,7 +73,7 @@ func (us *MyUserStore) Login(credentials Credentials) (string, error) {
 	err := bcrypt.CompareHashAndPassword(hashedPwd, pwdBytes)
 	if err != nil {
 		// password does not match
-		return "", errors.New("Invalid username or password3")
+		return "", errors.New("Invalid username or password")
 	}
 
 	// generate token
@@ -95,6 +95,14 @@ func (us *MyUserStore) Login(credentials Credentials) (string, error) {
 }
 
 func (us *MyUserStore) Logout(token string) error {
+	// check if token belongs to a session
+	row := us.db.QueryRow("SELECT * FROM sessions WHERE token = ?", token)
+	if err := row.Err(); err == sql.ErrNoRows {
+		return errors.New("Invalid token")
+	} else if err != nil {
+		return err
+	}
+
 	// delete token from database
 	_, err := us.db.Exec("DELETE FROM sessions WHERE token = ?", token)
 	if err != nil {

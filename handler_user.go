@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -29,8 +30,8 @@ func (uh *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	if r.Header.Get("Content-Type") != "application/json" {
-		http.Error(w, "Unsupported Media Type", http.StatusUnsupportedMediaType)
+	if ct := r.Header.Get("Content-Type"); !strings.Contains(ct, "application/json") {
+		http.Error(w, fmt.Sprintf("Unsupported Media Type %s", ct), http.StatusUnsupportedMediaType)
 		return
 	}
 
@@ -89,8 +90,8 @@ func (uh *UserHandler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	if r.Header.Get("Content-Type") != "application/json" {
-		http.Error(w, "Unsupported Media Type", http.StatusUnsupportedMediaType)
+	if ct := r.Header.Get("Content-Type"); !strings.Contains(ct, "application/json") {
+		http.Error(w, fmt.Sprintf("Unsupported Media Type %s", ct), http.StatusUnsupportedMediaType)
 		return
 	}
 
