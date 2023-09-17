@@ -19,14 +19,16 @@ type UserStore interface {
 	Signup(c Credentials) error
 	Login(c Credentials) (string, error)
 	Logout(token string) error
+
+	Leaderboard() ([]LeaderbordEntry, error)
 }
 
 type MyUserStore struct {
-	db *sql.DB
+	DB *sql.DB
 }
 
 func (us *MyUserStore) Signup(credential Credentials) error {
-	if us.db.QueryRow("SELECT * FROM users WHERE username = ?", credential.Username).Scan() != sql.ErrNoRows {
+	if us.DB.QueryRow("SELECT * FROM users WHERE username = ?", credential.Username).Scan() != sql.ErrNoRows {
 		return errors.New("Username already exists")
 	}
 
@@ -43,7 +45,7 @@ func (us *MyUserStore) Signup(credential Credentials) error {
 	hashedPwd, err := bcrypt.GenerateFromPassword(pwdBytes, bcrypt.DefaultCost)
 
 	// store username, hashed password, and salt in database
-	_, err = us.db.Exec("INSERT INTO users (username, hashed_password, salt) VALUES (?, ?, ?)", credential.Username, hashedPwd, salt)
+	_, err = us.DB.Exec("INSERT INTO users (username, hashed_password, salt) VALUES (?, ?, ?)", credential.Username, hashedPwd, salt)
 	if err != nil {
 		return err
 	}
@@ -52,7 +54,7 @@ func (us *MyUserStore) Signup(credential Credentials) error {
 }
 
 func (us *MyUserStore) Login(credentials Credentials) (string, error) {
-	row := us.db.QueryRow("SELECT * FROM users WHERE username = ?", credentials.Username)
+	row := us.DB.QueryRow("SELECT * FROM users WHERE username = ?", credentials.Username)
 
 	var id int
 	var username string
@@ -86,7 +88,7 @@ func (us *MyUserStore) Login(credentials Credentials) (string, error) {
 	token := b64.StdEncoding.EncodeToString([]byte(tokenBytes))
 
 	// store token in database
-	_, err = us.db.Exec("INSERT INTO sessions (user_id, token) VALUES (?, ?)", id, token)
+	_, err = us.DB.Exec("INSERT INTO sessions (user_id, token) VALUES (?, ?)", id, token)
 	if err != nil {
 		return "", err
 	}
@@ -96,7 +98,7 @@ func (us *MyUserStore) Login(credentials Credentials) (string, error) {
 
 func (us *MyUserStore) Logout(token string) error {
 	// check if token belongs to a session
-	row := us.db.QueryRow("SELECT * FROM sessions WHERE token = ?", token)
+	row := us.DB.QueryRow("SELECT * FROM sessions WHERE token = ?", token)
 	if err := row.Err(); err == sql.ErrNoRows {
 		return errors.New("Invalid token")
 	} else if err != nil {
@@ -104,9 +106,31 @@ func (us *MyUserStore) Logout(token string) error {
 	}
 
 	// delete token from database
-	_, err := us.db.Exec("DELETE FROM sessions WHERE token = ?", token)
+	_, err := us.DB.Exec("DELETE FROM sessions WHERE token = ?", token)
 	if err != nil {
 		return err
 	}
 	return nil
+}
+
+func (us *MyUserStore) Leaderboard() ([]LeaderbordEntry, error) {
+	leaderboard := make([]LeaderbordEntry, 0)
+
+	rows, err := us.DB.Query("SELECT username, SUM(points) as score FROM users, quiz_participation qp WHERE users.id = qp.user_id GROUP BY username ORDER BY score DESC")
+	if err != nil {
+		return leaderboard, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var username string
+		var score int
+		if err := rows.Scan(&username, &score); err != nil {
+			return leaderboard, err
+		}
+		leaderboardEntry := LeaderbordEntry{Username: username, Experience: 0.5, Points: score}
+		leaderboard = append(leaderboard, leaderboardEntry)
+	}
+
+	return leaderboard, nil
 }

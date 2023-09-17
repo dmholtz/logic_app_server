@@ -19,6 +19,7 @@ func main() {
 
 	server := las.NewLogicAppServer(db)
 	err := http.ListenAndServeTLS(":443", "cert/dev.cert.pem", "cert/dev.key.pem", server)
+	//err := http.ListenAndServe(":443", server)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
