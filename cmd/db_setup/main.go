@@ -88,10 +88,23 @@ func AddDummyData() {
 	userStore.Signup(las.Credentials{Username: "user2", Password: "user2"})
 	userStore.Signup(las.Credentials{Username: "user3", Password: "user3"})
 
-	// inser dummy quiz participations
+	// login dummy players
+	userStore.Login(las.Credentials{Username: "user1", Password: "user1"})
+
+	// insert dummy quiz participations
 	db.Exec("INSERT INTO quiz_participation (quiz_id, user_id, correct, points) VALUES (1,1,1,10)")
 	db.Exec("INSERT INTO quiz_participation (quiz_id, user_id, correct, points) VALUES (2,1,1,5)")
 	db.Exec("INSERT INTO quiz_participation (quiz_id, user_id, correct, points) VALUES (3,1,1,10)")
 	db.Exec("INSERT INTO quiz_participation (quiz_id, user_id, correct, points) VALUES (1,2,1,2)")
 	db.Exec("INSERT INTO quiz_participation (quiz_id, user_id, correct, points) VALUES (2,2,1,2)")
+
+	// insert dummy achieved relations
+	db.Exec("INSERT INTO achieved (user_id, achievement_id) VALUES (1,1)")
+	db.Exec("INSERT INTO achieved (user_id, achievement_id) VALUES (1,2)")
+	db.Exec("INSERT INTO achieved (user_id, achievement_id) VALUES (1,4)")
+	db.Exec("INSERT INTO achieved (user_id, achievement_id) VALUES (1,5)")
+	db.Exec("INSERT INTO achieved (user_id, achievement_id) VALUES (1,6)")
+	db.Exec("INSERT INTO achieved (user_id, achievement_id) VALUES (2,1)")
+	db.Exec("INSERT INTO achieved (user_id, achievement_id) VALUES (3,1)")
+	db.Exec("INSERT INTO achieved (user_id, achievement_id) VALUES (3,2)")
 }

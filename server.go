@@ -15,7 +15,7 @@ type LogicAppServer struct {
 func NewLogicAppServer(db *sql.DB) *LogicAppServer {
 	las := new(LogicAppServer)
 	las.db = db
-	userStore := &MyUserStore{DB: db}
+	userStore := NewMyUserStore(db)
 	las.userHandler = NewUserHandler(userStore)
 	las.playersHandler = NewPlayersHandler(userStore)
 

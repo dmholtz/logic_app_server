@@ -38,7 +38,8 @@ CREATE TABLE "achievement" (
     -- SQL query to check if achievement is unlocked
     "sql" text NOT NULL
 );
-CREATE TABLE "user_achievement" (
+-- models the many-to-many relationship between users and achievements
+CREATE TABLE "achieved" (
     "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
     "user_id" integer NOT NULL REFERENCES "users" ("id"),
     "achievement_id" integer NOT NULL REFERENCES "achievement" ("id"),
