@@ -27,6 +27,21 @@ CREATE TABLE "quiz_participation" (
     "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
     "quiz_id" integer NOT NULL REFERENCES "quiz" ("id"),
     "user_id" integer NOT NULL REFERENCES "users" ("id"),
+    "correct" boolean NOT NULL,
     "points" integer
+);
+CREATE TABLE "achievement" (
+    "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "name" varchar(255) NOT NULL,
+    "description" text NOT NULL,
+    "level" varchar(6) NOT NULL,
+    -- SQL query to check if achievement is unlocked
+    "sql" text NOT NULL
+);
+CREATE TABLE "user_achievement" (
+    "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "user_id" integer NOT NULL REFERENCES "users" ("id"),
+    "achievement_id" integer NOT NULL REFERENCES "achievement" ("id"),
+    UNIQUE ("user_id", "achievement_id")
 );
 -- TODO: Model leaderboard as a view
