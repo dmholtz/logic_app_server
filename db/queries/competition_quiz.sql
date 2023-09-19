@@ -3,7 +3,8 @@ SELECT id,
     type,
     time_limit,
     question,
-    possible_answers
+    answers,
+    solutions
 FROM quiz
 WHERE is_competition_mode = 1
     AND id NOT IN (

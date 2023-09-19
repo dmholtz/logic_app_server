@@ -20,8 +20,10 @@ CREATE TABLE "quiz" (
     "is_competition_mode" boolean NOT NULL,
     -- string representation of the question formula
     "question" text NOT NULL,
-    -- json list of possible answers and solutions: [{"answer": "yes", "solution": true}, {"answer": "no", "solution": false}]
-    "possible_answers" text NOT NULL
+    -- JSON string list of possible answers
+    "answers" text NOT NULL,
+    -- JSON bool list of solutions
+    "solutions" text NOT NULL
 );
 -- models the many-to-many relationship between users and quizzes
 CREATE TABLE "quiz_participation" (

@@ -221,20 +221,25 @@ func (us *MyUserStore) GetCompetitionQuiz(user_id int) (Quiz, error) {
 	var time_limit float64
 	var question string
 	var answer_str string
+	var solution_str string
 	row := us.DB.QueryRow(us.queryCompetitionQuiz, user_id)
 	if err := row.Err(); err == sql.ErrNoRows {
 		return Quiz{}, errors.New("No quiz in competition mode found.")
 	} else if err != nil {
 		return Quiz{}, err
 	}
-	row.Scan(&quiz_id, &quiz_type, &time_limit, &question, &answer_str)
+	row.Scan(&quiz_id, &quiz_type, &time_limit, &question, &answer_str, &solution_str)
 
-	// extract list of PossibleAnswer instances from JSON representation in answer_str
-	var possibleAnswers []PossibleAnswer
-	if err := json.Unmarshal([]byte(answer_str), &possibleAnswers); err != nil {
+	// extract list of answers and solutions from JSON representation in answer_str and solution_str
+	var answers []string
+	if err := json.Unmarshal([]byte(answer_str), &answers); err != nil {
 		return Quiz{}, err
 	}
-	return Quiz{QuizId: quiz_id, Type: quiz_type, TimeLimit: time_limit, Question: question, PossibleAnswers: possibleAnswers}, nil
+	var solutions []bool
+	if err := json.Unmarshal([]byte(solution_str), &solutions); err != nil {
+		return Quiz{}, err
+	}
+	return Quiz{QuizId: quiz_id, Type: quiz_type, TimeLimit: time_limit, Question: question, Answers: answers, Solutions: solutions}, nil
 }
 
 func (us *MyUserStore) FindQuiz(user_id int, qc QuizProperties) (Quiz, error) {
@@ -242,20 +247,25 @@ func (us *MyUserStore) FindQuiz(user_id int, qc QuizProperties) (Quiz, error) {
 	var quiz_type string
 	var question string
 	var answer_str string
+	var solution_str string
 	row := us.DB.QueryRow(us.queryFindQuiz, qc.Type, qc.Difficulty, qc.NumVars, user_id)
 	if err := row.Err(); err == sql.ErrNoRows {
 		return Quiz{}, errors.New("No quiz that matches the search critera has been found.")
 	} else if err != nil {
 		return Quiz{}, err
 	}
-	row.Scan(&quiz_id, &quiz_type, &question, &answer_str)
+	row.Scan(&quiz_id, &quiz_type, &question, &answer_str, &solution_str)
 
-	// extract list of PossibleAnswer instances from JSON representation in answer_str
-	var possibleAnswers []PossibleAnswer
-	if err := json.Unmarshal([]byte(answer_str), &possibleAnswers); err != nil {
+	// extract list of answers and solutions from JSON representation in answer_str and solution_str
+	var answers []string
+	if err := json.Unmarshal([]byte(answer_str), &answers); err != nil {
 		return Quiz{}, err
 	}
-	return Quiz{QuizId: quiz_id, Type: quiz_type, TimeLimit: float64(qc.TimeLimit), Question: question, PossibleAnswers: possibleAnswers}, nil
+	var solutions []bool
+	if err := json.Unmarshal([]byte(solution_str), &solutions); err != nil {
+		return Quiz{}, err
+	}
+	return Quiz{QuizId: quiz_id, Type: quiz_type, TimeLimit: float64(qc.TimeLimit), Question: question, Answers: answers, Solutions: solutions}, nil
 }
 
 func (us *MyUserStore) SolveQuiz(user_id int, quiz_id int) error {

@@ -1,7 +1,8 @@
 SELECT id,
     type,
     question,
-    possible_answers
+    answers,
+    solutions
 FROM quiz
 WHERE is_competition_mode = 0
     AND type = ?

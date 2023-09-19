@@ -5,7 +5,8 @@ INSERT INTO quiz (
         time_limit,
         is_competition_mode,
         question,
-        possible_answers
+        answers,
+        solutions
     )
 VALUES (
         "SAT",
@@ -14,7 +15,8 @@ VALUES (
         60,
         0,
         "A | (B & !B)",
-        '[{"answer": "yes", "solution": true}, {"answer": "no", "solution": false}]'
+        '["yes", "no"]',
+        '[true, false]'
     );
 INSERT INTO quiz (
         type,
@@ -23,7 +25,8 @@ INSERT INTO quiz (
         time_limit,
         is_competition_mode,
         question,
-        possible_answers
+        answers,
+        solutions
     )
 VALUES (
         "SAT",
@@ -32,7 +35,8 @@ VALUES (
         NULL,
         0,
         "(A <-> !B) & (!A -> !B)",
-        '[{"answer": "yes", "solution": true}, {"answer": "no", "solution": false}]'
+        '["yes", "no"]',
+        '[true, false]'
     );
 INSERT INTO quiz (
         type,
@@ -41,7 +45,8 @@ INSERT INTO quiz (
         time_limit,
         is_competition_mode,
         question,
-        possible_answers
+        answers,
+        solutions
     )
 VALUES (
         "EQUIV",
@@ -50,7 +55,8 @@ VALUES (
         30,
         1,
         "A <-> B",
-        '[{"answer": "(A -> B) & (!A -> !B)", "solution": true}, {"answer": "(A & B) | (!A & !B) ", "solution": true}, {"answer": "(A | B) & (A <-> B)", "solution": false}, {"answer": "(A -> B) & (!B | A)", "solution": true}]'
+        '["(A -> B) & (!A -> !B)", "(A & B) | (!A & !B)", "(A | B) & (A <-> B)", "(A -> B) & (!B | A)"]',
+        '[true, true, false, true]'
     );
 INSERT INTO quiz (
         type,
@@ -59,7 +65,8 @@ INSERT INTO quiz (
         time_limit,
         is_competition_mode,
         question,
-        possible_answers
+        answers,
+        solutions
     )
 VALUES (
         "TAUT",
@@ -68,5 +75,6 @@ VALUES (
         NULL,
         0,
         "(A | !A) & (B | !B)",
-        '[{"answer": "yes", "solution": true}, {"answer": "no", "solution": false}]'
+        '["yes", "no"]',
+        '[true, false]'
     )

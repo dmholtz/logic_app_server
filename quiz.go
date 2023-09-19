@@ -7,17 +7,13 @@ import (
 	"strings"
 )
 
-type PossibleAnswer struct {
-	Answer   string `json:"answer"`
-	Solution bool   `json:"solution"`
-}
-
 type Quiz struct {
-	QuizId          int              `json:"quiz_id"`
-	Type            string           `json:"type"`
-	TimeLimit       float64          `json:"time_limit"`
-	Question        string           `json:"question"`
-	PossibleAnswers []PossibleAnswer `json:"possible_answers"`
+	QuizId    int      `json:"quiz_id"`
+	Type      string   `json:"type"`
+	TimeLimit float64  `json:"time_limit"`
+	Question  string   `json:"question"`
+	Answers   []string `json:"answers"`
+	Solutions []bool   `json:"solutions"`
 }
 
 type QuizProperties struct {
