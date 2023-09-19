@@ -2,6 +2,7 @@ package server
 
 import (
 	b64 "encoding/base64"
+	"encoding/json"
 	"log"
 
 	"crypto/rand"
@@ -11,11 +12,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Credentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 type UserStore interface {
 	Signup(c Credentials) error
 	Login(c Credentials) (string, error)
@@ -24,14 +20,20 @@ type UserStore interface {
 
 	Achievements(user_id int) ([]Achievement, error)
 	Leaderboard() ([]LeaderbordEntry, error)
+
+	GetCompetitionQuiz(user_id int) (Quiz, error)
+	FindQuiz(user_id int, qc QuizProperties) (Quiz, error)
+	SolveQuiz(user_id int, quiz_id int) error
 }
 
 type MyUserStore struct {
 	DB *sql.DB
 
 	// cached query strings
-	queryAchievements string
-	queryLeaderboard  string
+	queryAchievements    string
+	queryFindQuiz        string
+	queryCompetitionQuiz string
+	queryLeaderboard     string
 
 	// cached query results
 	numAchievements int
@@ -40,6 +42,8 @@ type MyUserStore struct {
 func NewMyUserStore(db *sql.DB) *MyUserStore {
 	// cache query strings
 	queryAchievements := ReadQueryFile("db/queries/achievements.sql")
+	queryCompetitionQuiz := ReadQueryFile("db/queries/competition_quiz.sql")
+	queryFindQuiz := ReadQueryFile("db/queries/find_quiz.sql")
 	queryLeaderboard := ReadQueryFile("db/queries/leaderboard.sql")
 
 	// cache number of achievements
@@ -50,10 +54,12 @@ func NewMyUserStore(db *sql.DB) *MyUserStore {
 	}
 
 	return &MyUserStore{
-		DB:                db,
-		queryAchievements: queryAchievements,
-		queryLeaderboard:  queryLeaderboard,
-		numAchievements:   numAchievements,
+		DB:                   db,
+		queryAchievements:    queryAchievements,
+		queryCompetitionQuiz: queryCompetitionQuiz,
+		queryFindQuiz:        queryFindQuiz,
+		queryLeaderboard:     queryLeaderboard,
+		numAchievements:      numAchievements,
 	}
 }
 
@@ -207,4 +213,51 @@ func (us *MyUserStore) Leaderboard() ([]LeaderbordEntry, error) {
 	}
 
 	return leaderboard, nil
+}
+
+func (us *MyUserStore) GetCompetitionQuiz(user_id int) (Quiz, error) {
+	var quiz_id int
+	var quiz_type string
+	var time_limit float64
+	var question string
+	var answer_str string
+	row := us.DB.QueryRow(us.queryCompetitionQuiz, user_id)
+	if err := row.Err(); err == sql.ErrNoRows {
+		return Quiz{}, errors.New("No quiz in competition mode found.")
+	} else if err != nil {
+		return Quiz{}, err
+	}
+	row.Scan(&quiz_id, &quiz_type, &time_limit, &question, &answer_str)
+
+	// extract list of PossibleAnswer instances from JSON representation in answer_str
+	var possibleAnswers []PossibleAnswer
+	if err := json.Unmarshal([]byte(answer_str), &possibleAnswers); err != nil {
+		return Quiz{}, err
+	}
+	return Quiz{QuizId: quiz_id, Type: quiz_type, TimeLimit: time_limit, Question: question, PossibleAnswers: possibleAnswers}, nil
+}
+
+func (us *MyUserStore) FindQuiz(user_id int, qc QuizProperties) (Quiz, error) {
+	var quiz_id int
+	var quiz_type string
+	var question string
+	var answer_str string
+	row := us.DB.QueryRow(us.queryFindQuiz, qc.Type, qc.Difficulty, qc.NumVars, user_id)
+	if err := row.Err(); err == sql.ErrNoRows {
+		return Quiz{}, errors.New("No quiz that matches the search critera has been found.")
+	} else if err != nil {
+		return Quiz{}, err
+	}
+	row.Scan(&quiz_id, &quiz_type, &question, &answer_str)
+
+	// extract list of PossibleAnswer instances from JSON representation in answer_str
+	var possibleAnswers []PossibleAnswer
+	if err := json.Unmarshal([]byte(answer_str), &possibleAnswers); err != nil {
+		return Quiz{}, err
+	}
+	return Quiz{QuizId: quiz_id, Type: quiz_type, TimeLimit: float64(qc.TimeLimit), Question: question, PossibleAnswers: possibleAnswers}, nil
+}
+
+func (us *MyUserStore) SolveQuiz(user_id int, quiz_id int) error {
+	return nil
 }

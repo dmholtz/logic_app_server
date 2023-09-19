@@ -10,6 +10,7 @@ type LogicAppServer struct {
 	http.Handler
 	userHandler    *UserHandler
 	playersHandler *PlayersHandler
+	quizHandler    *QuizHandler
 }
 
 func NewLogicAppServer(db *sql.DB) *LogicAppServer {
@@ -18,10 +19,12 @@ func NewLogicAppServer(db *sql.DB) *LogicAppServer {
 	userStore := NewMyUserStore(db)
 	las.userHandler = NewUserHandler(userStore)
 	las.playersHandler = NewPlayersHandler(userStore)
+	las.quizHandler = NewQuizHandler(userStore)
 
 	router := http.NewServeMux()
-	router.Handle("/user/", http.StripPrefix("/user", las.userHandler))
 	router.Handle("/players/", http.StripPrefix("/players", las.playersHandler))
+	router.Handle("/quiz/", http.StripPrefix("/quiz", las.quizHandler))
+	router.Handle("/user/", http.StripPrefix("/user", las.userHandler))
 
 	las.Handler = router
 

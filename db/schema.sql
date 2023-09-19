@@ -15,19 +15,21 @@ CREATE TABLE "quiz" (
     "difficulty" varchar(6) NOT NULL,
     "num_vars" integer NOT NULL,
     -- time limit in seconds, null if unlimited
-    "time_limit" integer,
+    "time_limit" DECIMAL,
     -- true if quiz is in competition mode, false if in practice mode
     "is_competition_mode" boolean NOT NULL,
-    -- json representation of the question formula
+    -- string representation of the question formula
     "question" text NOT NULL,
-    -- json list of possible answers and solutions
-    "answer" text NOT NULL
+    -- json list of possible answers and solutions: [{"answer": "yes", "solution": true}, {"answer": "no", "solution": false}]
+    "possible_answers" text NOT NULL
 );
+-- models the many-to-many relationship between users and quizzes
 CREATE TABLE "quiz_participation" (
     "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
     "quiz_id" integer NOT NULL REFERENCES "quiz" ("id"),
     "user_id" integer NOT NULL REFERENCES "users" ("id"),
     "correct" boolean NOT NULL,
+    "time" DECIMAL,
     "points" integer
 );
 CREATE TABLE "achievement" (
