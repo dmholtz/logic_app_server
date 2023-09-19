@@ -8,9 +8,9 @@ import (
 )
 
 type Quiz struct {
-	QuizId    int      `json:"quiz_id"`
+	QuizId    int      `json:"quizId"`
 	Type      string   `json:"type"`
-	TimeLimit float64  `json:"time_limit"`
+	TimeLimit float64  `json:"timeLimit"`
 	Question  string   `json:"question"`
 	Answers   []string `json:"answers"`
 	Solutions []bool   `json:"solutions"`
