@@ -4,6 +4,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 	"log"
+	"math"
 
 	"crypto/rand"
 	"database/sql"
@@ -23,7 +24,7 @@ type UserStore interface {
 
 	GetCompetitionQuiz(user_id int) (Quiz, error)
 	FindQuiz(user_id int, qc QuizProperties) (Quiz, error)
-	SolveQuiz(user_id int, quiz_id int) error
+	SolveQuiz(user_id int, ss SolveSubmission) (SolveSubmissionResponse, error)
 }
 
 type MyUserStore struct {
@@ -268,6 +269,88 @@ func (us *MyUserStore) FindQuiz(user_id int, qc QuizProperties) (Quiz, error) {
 	return Quiz{QuizId: quiz_id, Type: quiz_type, TimeLimit: float64(qc.TimeLimit), Question: question, Answers: answers, Solutions: solutions}, nil
 }
 
-func (us *MyUserStore) SolveQuiz(user_id int, quiz_id int) error {
+func (us *MyUserStore) SolveQuiz(userId int, ss SolveSubmission) (SolveSubmissionResponse, error) {
+	points, err := us.CalculatePoints(ss)
+	if err != nil {
+		return SolveSubmissionResponse{}, err
+	}
+	_, err = us.DB.Exec("INSERT INTO quiz_participation (quiz_id, user_id, correct, time, points) VALUES (?, ?, ?, ?, ?)", ss.QuizId, userId, ss.IsCorrect, ss.Time, points)
+	if err != nil {
+		return SolveSubmissionResponse{}, err
+	}
+	err = us.UpdateAchievements(userId)
+	if err != nil {
+		return SolveSubmissionResponse{}, err
+	}
+	return SolveSubmissionResponse{Points: points}, nil
+}
+
+func (us *MyUserStore) CalculatePoints(ss SolveSubmission) (int, error) {
+	if !ss.IsCorrect {
+		return 0, nil
+	}
+	var difficulty string
+	var numVars int
+	var timeLimit int
+	var isCompetitionMode bool
+	row := us.DB.QueryRow("SELECT difficulty, num_vars, time_limit, is_competition_mode FROM quiz WHERE id = ?", ss.QuizId)
+	if err := row.Err(); err == sql.ErrNoRows {
+		return 0, errors.New("Invalid quiz id.")
+	} else if err != nil {
+		return 0, err
+	}
+	row.Scan(&difficulty, &numVars, &timeLimit, &isCompetitionMode)
+	if !isCompetitionMode {
+		return 0, nil
+	}
+	var points int
+	if difficulty == "easy" {
+		points = 1
+	} else if difficulty == "medium" {
+		points = 2
+	} else if difficulty == "hard" {
+		points = 3
+	}
+	points *= numVars
+	points *= int(math.Max((float64(timeLimit)-ss.Time)/5, 1))
+
+	return points, nil
+}
+
+func (us *MyUserStore) UpdateAchievements(userId int) error {
+	// collect all achievements that are not yet achieved
+	rows, err := us.DB.Query("SELECT id, sql FROM achievement WHERE id not in (SELECT achievement_id FROM achieved WHERE user_id = ?)", userId)
+	if err != nil {
+		return err
+	}
+
+	achievementIds := make([]int, 0)
+	achievementQueries := make([]string, 0)
+	for rows.Next() {
+		var achievement_id int
+		var achievementQuery string
+		if err := rows.Scan(&achievement_id, &achievementQuery); err != nil {
+			return err
+		}
+		achievementIds = append(achievementIds, achievement_id)
+		achievementQueries = append(achievementQueries, achievementQuery)
+	}
+	rows.Close()
+
+	for i := 0; i < len(achievementIds); i++ {
+		// check if achievement is achieved
+		row := us.DB.QueryRow(achievementQueries[i], userId)
+		var count int
+		if err := row.Scan(&count); err != nil {
+			// achievement not achieved
+			continue
+		}
+		// achievement achieved
+		_, err := us.DB.Exec("INSERT INTO achieved (user_id, achievement_id) VALUES (?, ?)", userId, achievementIds[i])
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

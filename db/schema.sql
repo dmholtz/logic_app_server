@@ -31,8 +31,10 @@ CREATE TABLE "quiz_participation" (
     "quiz_id" integer NOT NULL REFERENCES "quiz" ("id"),
     "user_id" integer NOT NULL REFERENCES "users" ("id"),
     "correct" boolean NOT NULL,
+    -- time taken to solve quiz in seconds (null if not timed or not solved correctly)
     "time" DECIMAL,
-    "points" integer
+    -- points are 0 if quiz is not in competition mode or not solved correctly
+    "points" integer NOT NULL
 );
 CREATE TABLE "achievement" (
     "id" integer NOT NULL PRIMARY KEY AUTOINCREMENT,
