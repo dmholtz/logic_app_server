@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -49,6 +48,5 @@ func QuizPropertiesFromUrlQuery(queryParams url.Values) (QuizProperties, error) 
 		return qp, errors.New("Invalid time limit.")
 	}
 	qp.TimeLimit = int(timeLimit)
-	fmt.Println(qp)
 	return qp, nil
 }

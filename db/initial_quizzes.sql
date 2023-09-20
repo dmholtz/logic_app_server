@@ -36,7 +36,7 @@ VALUES (
         1,
         "(A | B | !C) & !A & C & (!B | !C)",
         '["yes", "no"]',
-        '[no, true]'
+        '[false, true]'
     );
 INSERT INTO quiz (
         type,
