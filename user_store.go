@@ -6,9 +6,9 @@ import (
 	"log"
 	"math"
 
-	"crypto/rand"
 	"database/sql"
 	"errors"
+	"math/rand"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -241,12 +241,15 @@ func (us *MyUserStore) GetCompetitionQuiz(user_id int) (Quiz, error) {
 	var answer_str string
 	var solution_str string
 	row := us.DB.QueryRow(us.queryCompetitionQuiz, user_id)
-	if err := row.Err(); err == sql.ErrNoRows {
-		return Quiz{}, errors.New("No quiz in competition mode found.")
+	err := row.Scan(&quiz_id, &quiz_type, &time_limit, &question, &answer_str, &solution_str)
+	if err == sql.ErrNoRows {
+		// generate a quiz
+		randomQuizProperties := RandomQuizProperties()
+		quiz, err := us.GenerateQuiz(randomQuizProperties, true)
+		return quiz, err
 	} else if err != nil {
 		return Quiz{}, err
 	}
-	row.Scan(&quiz_id, &quiz_type, &time_limit, &question, &answer_str, &solution_str)
 
 	// extract list of answers and solutions from JSON representation in answer_str and solution_str
 	var answers []string
@@ -267,12 +270,14 @@ func (us *MyUserStore) FindQuiz(user_id int, qc QuizProperties) (Quiz, error) {
 	var answer_str string
 	var solution_str string
 	row := us.DB.QueryRow(us.queryFindQuiz, qc.Type, qc.Difficulty, qc.NumVars, user_id)
-	if err := row.Err(); err == sql.ErrNoRows {
-		return Quiz{}, errors.New("No quiz that matches the search critera has been found.")
+	err := row.Scan(&quiz_id, &quiz_type, &question, &answer_str, &solution_str)
+	if err == sql.ErrNoRows {
+		// generate a quiz
+		quiz, err := us.GenerateQuiz(qc, false)
+		return quiz, err
 	} else if err != nil {
 		return Quiz{}, err
 	}
-	row.Scan(&quiz_id, &quiz_type, &question, &answer_str, &solution_str)
 
 	// extract list of answers and solutions from JSON representation in answer_str and solution_str
 	var answers []string
@@ -370,4 +375,39 @@ func (us *MyUserStore) UpdateAchievements(userId int) error {
 	}
 
 	return nil
+}
+
+func (us *MyUserStore) GenerateQuiz(qc QuizProperties, isCompetition bool) (Quiz, error) {
+	quiz := GenerateTask(qc)
+
+	// prepare quiz for storage in database
+	answer_str, _ := json.Marshal(quiz.Answers)
+	solution_str, _ := json.Marshal(quiz.Solutions)
+
+	var res sql.Result
+	var err error
+	if isCompetition {
+		// competition mode
+		timeLimit := TimeFromQuizProperties(qc)
+		quiz.TimeLimit = float64(timeLimit)
+		res, err = us.DB.Exec("INSERT INTO quiz (type, difficulty, num_vars, time_limit, is_competition_mode, question, answers, solutions) VALUES (?, ?, ?, ?, 1, ?, ?, ?)",
+			quiz.Type, qc.Difficulty, qc.NumVars, timeLimit, quiz.Question, string(answer_str), string(solution_str))
+	} else {
+		// practice mode
+		quiz.TimeLimit = float64(qc.TimeLimit)
+		res, err = us.DB.Exec("INSERT INTO quiz (type, difficulty, num_vars, time_limit, is_competition_mode, question, answers, solutions) VALUES (?, ?, ?, NULL, 0, ?, ?, ?)",
+			quiz.Type, qc.Difficulty, qc.NumVars, qc.TimeLimit, quiz.Question, string(answer_str), string(solution_str))
+	}
+
+	if err != nil {
+		return Quiz{}, err
+	}
+
+	quizId, err := res.LastInsertId()
+	if err != nil {
+		return Quiz{}, err
+	}
+	quiz.QuizId = int(quizId)
+
+	return quiz, nil
 }

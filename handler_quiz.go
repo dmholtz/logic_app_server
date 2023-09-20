@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 )
@@ -93,7 +92,6 @@ func (uh *QuizHandler) FindHandler(w http.ResponseWriter, r *http.Request) {
 	// query quiz database
 	quiz, err := uh.userStore.FindQuiz(user_id, qc)
 	if err != nil {
-		fmt.Println(err)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
