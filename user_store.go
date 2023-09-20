@@ -18,6 +18,7 @@ type UserStore interface {
 	Login(c Credentials) (string, error)
 	Logout(token string) error
 	UserIdFromToken(token string) (int, error)
+	ResetUser(userId int) error
 
 	Achievements(user_id int) ([]Achievement, error)
 	Leaderboard() ([]LeaderbordEntry, error)
@@ -167,6 +168,22 @@ func (us *MyUserStore) UserIdFromToken(token string) (int, error) {
 	}
 
 	return user_id, nil
+}
+
+func (us *MyUserStore) ResetUser(userId int) error {
+	// delete all quiz_participations of user
+	_, err := us.DB.Exec("DELETE FROM quiz_participation WHERE user_id = ?", userId)
+	if err != nil {
+		return err
+	}
+
+	// delete all achieved achievements of user
+	_, err = us.DB.Exec("DELETE FROM achieved WHERE user_id = ?", userId)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (us *MyUserStore) Achievements(user_id int) ([]Achievement, error) {

@@ -20,6 +20,7 @@ func NewUserHandler(store UserStore) *UserHandler {
 	router.HandleFunc("/login", http.HandlerFunc(uh.LoginHandler))
 	router.HandleFunc("/logout", http.HandlerFunc(uh.LogoutHandler))
 	router.HandleFunc("/signup", http.HandlerFunc(uh.SignupHandler))
+	router.HandleFunc("/reset", http.HandlerFunc(uh.ResetHandler))
 
 	uh.Handler = router
 	return uh
@@ -113,4 +114,37 @@ func (uh *UserHandler) SignupHandler(w http.ResponseWriter, r *http.Request) {
 	// return success
 	w.WriteHeader(http.StatusCreated)
 	return
+}
+
+func (uh *UserHandler) ResetHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// get authorization token
+	authHeader := r.Header.Get("Authorization")
+	splitToken := strings.Split(authHeader, "Bearer ")
+	if len(splitToken) != 2 {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	token := splitToken[1]
+
+	// get user from request context
+	user_id, err := uh.userStore.UserIdFromToken(token)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	// reset user
+	reset_err := uh.userStore.ResetUser(user_id)
+	if reset_err != nil {
+		http.Error(w, reset_err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// return success
+	w.WriteHeader(http.StatusOK)
 }
