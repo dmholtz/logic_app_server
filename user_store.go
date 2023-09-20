@@ -396,7 +396,7 @@ func (us *MyUserStore) GenerateQuiz(qc QuizProperties, isCompetition bool) (Quiz
 		// practice mode
 		quiz.TimeLimit = float64(qc.TimeLimit)
 		res, err = us.DB.Exec("INSERT INTO quiz (type, difficulty, num_vars, time_limit, is_competition_mode, question, answers, solutions) VALUES (?, ?, ?, NULL, 0, ?, ?, ?)",
-			quiz.Type, qc.Difficulty, qc.NumVars, qc.TimeLimit, quiz.Question, string(answer_str), string(solution_str))
+			quiz.Type, qc.Difficulty, qc.NumVars, quiz.Question, string(answer_str), string(solution_str))
 	}
 
 	if err != nil {

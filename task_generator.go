@@ -87,7 +87,7 @@ func generateSat(qp QuizProperties) Quiz {
 	// enforce the correct scope
 	for len(formula.Scope()) != qp.NumVars {
 		if rand.Intn(2) == 0 {
-			// not a tautology
+			// not satisfiable
 			unsat := dnfBuilder.BuildUnsat()
 			formula = &unsat
 			solution = []bool{false, true}
@@ -123,7 +123,7 @@ func generateTaut(qp QuizProperties) Quiz {
 			formula = l.Not(&sat)
 			solution = []bool{false, true}
 		} else {
-			// satisfiable
+			// tautology
 			unsat := dnfBuilder.BuildUnsat()
 			formula = l.Not(&unsat)
 			solution = []bool{true, false}
