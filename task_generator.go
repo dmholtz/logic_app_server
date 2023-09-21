@@ -143,5 +143,62 @@ func generateTaut(qp QuizProperties) Quiz {
 }
 
 func generateEquiv(qp QuizProperties) Quiz {
-	return Quiz{}
+	equivBuilder := b.NewEquivalentFormulaBuilder(qp.NumVars, qp.NumVars+3)
+	// enforce the correct scope
+	for len(equivBuilder.BaseFormula.Scope())+1 != qp.NumVars {
+		equivBuilder = b.NewEquivalentFormulaBuilder(qp.NumVars, 6)
+	}
+
+	answerFormulas := make([]l.LogicNode, 0)
+	solutionsRaw := make([]bool, 0)
+
+	numEquivalents := rand.Intn(4) + 1
+	for i := 0; i < numEquivalents; i++ {
+		answerFormulas = append(answerFormulas, equivBuilder.Equivalent())
+		solutionsRaw = append(solutionsRaw, true)
+	}
+	for i := numEquivalents; i < 4; i++ {
+		answerFormulas = append(answerFormulas, equivBuilder.NotEquivalent())
+		solutionsRaw = append(solutionsRaw, false)
+	}
+
+	// remove arrows and apply commutativity to all formulas
+	question := equivBuilder.Question()
+	question = s.Traverse(question, s.RemoveIff)
+	question = s.Traverse(question, s.RemoveImplies)
+	for i := 0; i < 4; i++ {
+		answerFormulas[i] = s.Traverse(answerFormulas[i], s.RemoveIff)
+		answerFormulas[i] = s.Traverse(answerFormulas[i], s.RemoveImplies)
+		answerFormulas[i] = s.TraverseProbabilistic(answerFormulas[i], s.Commute, 0.5)
+	}
+
+	if qp.Difficulty == "medium" || qp.Difficulty == "hard" {
+		// scramble formula with DeMorgan
+		for i := 0; i < 4; i++ {
+			answerFormulas[i] = s.DeMorganIteration(answerFormulas[i])
+		}
+	}
+
+	if qp.Difficulty == "hard" {
+		// try to introduce -> and <-> operators
+		for i := 0; i < 4; i++ {
+			answerFormulas[i] = s.SubstituteArrows(answerFormulas[i])
+		}
+	}
+
+	// simplify all formulas
+	for i := 0; i < 4; i++ {
+		answerFormulas[i] = s.Simplify(answerFormulas[i])
+	}
+
+	// permute answers and their corresponding solutions
+	perm := rand.Perm(4)
+	answers := make([]string, 4)
+	solutions := make([]bool, 4)
+	for i := 0; i < 4; i++ {
+		answers[i] = answerFormulas[perm[i]].String()
+		solutions[i] = solutionsRaw[perm[i]]
+	}
+
+	return Quiz{Type: "EQUIV", Question: question.String(), Answers: answers, Solutions: solutions}
 }
