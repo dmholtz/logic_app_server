@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	b64 "encoding/base64"
 	"encoding/json"
 	"log"
@@ -380,9 +381,15 @@ func (us *MyUserStore) UpdateAchievements(userId int) error {
 func (us *MyUserStore) GenerateQuiz(qc QuizProperties, isCompetition bool) (Quiz, error) {
 	quiz := GenerateTask(qc)
 
-	// prepare quiz for storage in database
-	answer_str, _ := json.Marshal(quiz.Answers)
-	solution_str, _ := json.Marshal(quiz.Solutions)
+	buf := &bytes.Buffer{}
+	enc := json.NewEncoder(buf)
+	enc.SetEscapeHTML(false)
+	enc.Encode(quiz.Answers)
+	answerStr := string(buf.Bytes())
+
+	buf.Reset()
+	enc.Encode(quiz.Solutions)
+	solutionStr := string(buf.Bytes())
 
 	var res sql.Result
 	var err error
@@ -391,12 +398,12 @@ func (us *MyUserStore) GenerateQuiz(qc QuizProperties, isCompetition bool) (Quiz
 		timeLimit := TimeFromQuizProperties(qc)
 		quiz.TimeLimit = float64(timeLimit)
 		res, err = us.DB.Exec("INSERT INTO quiz (type, difficulty, num_vars, time_limit, is_competition_mode, question, answers, solutions) VALUES (?, ?, ?, ?, 1, ?, ?, ?)",
-			quiz.Type, qc.Difficulty, qc.NumVars, timeLimit, quiz.Question, string(answer_str), string(solution_str))
+			quiz.Type, qc.Difficulty, qc.NumVars, timeLimit, quiz.Question, answerStr, solutionStr)
 	} else {
 		// practice mode
 		quiz.TimeLimit = float64(qc.TimeLimit)
 		res, err = us.DB.Exec("INSERT INTO quiz (type, difficulty, num_vars, time_limit, is_competition_mode, question, answers, solutions) VALUES (?, ?, ?, NULL, 0, ?, ?, ?)",
-			quiz.Type, qc.Difficulty, qc.NumVars, quiz.Question, string(answer_str), string(solution_str))
+			quiz.Type, qc.Difficulty, qc.NumVars, quiz.Question, answerStr, solutionStr)
 	}
 
 	if err != nil {

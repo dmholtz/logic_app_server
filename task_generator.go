@@ -143,7 +143,7 @@ func generateTaut(qp QuizProperties) Quiz {
 }
 
 func generateEquiv(qp QuizProperties) Quiz {
-	equivBuilder := b.NewEquivalentFormulaBuilder(qp.NumVars, qp.NumVars+3)
+	equivBuilder := b.NewEquivalentFormulaBuilder(qp.NumVars, qp.NumVars+2)
 	// enforce the correct scope
 	for len(equivBuilder.BaseFormula.Scope())+1 != qp.NumVars {
 		equivBuilder = b.NewEquivalentFormulaBuilder(qp.NumVars, 6)
@@ -187,17 +187,17 @@ func generateEquiv(qp QuizProperties) Quiz {
 	}
 
 	// simplify all formulas
+	question = s.Simplify(question)
 	for i := 0; i < 4; i++ {
 		answerFormulas[i] = s.Simplify(answerFormulas[i])
 	}
 
 	// permute answers and their corresponding solutions
-	perm := rand.Perm(4)
 	answers := make([]string, 4)
 	solutions := make([]bool, 4)
-	for i := 0; i < 4; i++ {
-		answers[i] = answerFormulas[perm[i]].String()
-		solutions[i] = solutionsRaw[perm[i]]
+	for i, j := range rand.Perm(4) {
+		answers[i] = answerFormulas[j].String()
+		solutions[i] = solutionsRaw[j]
 	}
 
 	return Quiz{Type: "EQUIV", Question: question.String(), Answers: answers, Solutions: solutions}
