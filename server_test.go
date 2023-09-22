@@ -83,3 +83,55 @@ func TestUserManagement(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, response.Code)
 	})
 }
+
+func TestPlayersHandler(t *testing.T) {
+	tempfile, err := os.CreateTemp("", "test_db.sqlite3")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer os.Remove(tempfile.Name())
+
+	dbBytes, err := os.ReadFile("./db_test.sqlite3")
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = tempfile.Write(dbBytes)
+
+	db, dbErr := sql.Open("sqlite3", tempfile.Name())
+	if dbErr != nil {
+		log.Fatal(dbErr)
+	}
+	defer db.Close()
+
+	server := NewLogicAppServer(db)
+
+	t.Run("GET /players/ returns 200", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/players/", nil)
+		response := httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		assert.Equal(t, http.StatusOK, response.Code)
+	})
+
+	t.Run("GET /players/player/achievement returns 200 if authorized", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/players/player/achievements", nil)
+		request.Header.Set("Authorization", "Bearer 2TeSZoUxu3a1qCc/23KZ8PCKgeABYGuFpRgEWMw6skQ=")
+		response := httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		assert.Equal(t, http.StatusOK, response.Code)
+	})
+
+	t.Run("GET /players/player/achievement returns 200 if not authorized", func(t *testing.T) {
+		request, _ := http.NewRequest(http.MethodGet, "/players/player/achievements", nil)
+		//request.Header.Set("Authorization", "Bearer unknown")
+		response := httptest.NewRecorder()
+
+		server.ServeHTTP(response, request)
+
+		assert.Equal(t, http.StatusUnauthorized, response.Code)
+	})
+
+}
