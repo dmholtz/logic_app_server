@@ -27,6 +27,8 @@ type UserStore interface {
 	GetCompetitionQuiz(user_id int) (Quiz, error)
 	FindQuiz(user_id int, qc QuizProperties) (Quiz, error)
 	SolveQuiz(user_id int, ss SolveSubmission) (SolveSubmissionResponse, error)
+
+	GetStats() ([]StatItem, error)
 }
 
 type MyUserStore struct {
@@ -37,6 +39,7 @@ type MyUserStore struct {
 	queryFindQuiz        string
 	queryCompetitionQuiz string
 	queryLeaderboard     string
+	queryStats           string
 
 	// cached query results
 	numAchievements int
@@ -48,6 +51,7 @@ func NewMyUserStore(db *sql.DB) *MyUserStore {
 	queryCompetitionQuiz := ReadQueryFile("db/queries/competition_quiz.sql")
 	queryFindQuiz := ReadQueryFile("db/queries/find_quiz.sql")
 	queryLeaderboard := ReadQueryFile("db/queries/leaderboard.sql")
+	queryStats := ReadQueryFile("db/queries/anonymous_stats.sql")
 
 	// cache number of achievements
 	var numAchievements int
@@ -62,6 +66,7 @@ func NewMyUserStore(db *sql.DB) *MyUserStore {
 		queryCompetitionQuiz: queryCompetitionQuiz,
 		queryFindQuiz:        queryFindQuiz,
 		queryLeaderboard:     queryLeaderboard,
+		queryStats:           queryStats,
 		numAchievements:      numAchievements,
 	}
 }
@@ -417,4 +422,28 @@ func (us *MyUserStore) GenerateQuiz(qc QuizProperties, isCompetition bool) (Quiz
 	quiz.QuizId = int(quizId)
 
 	return quiz, nil
+}
+
+func (us *MyUserStore) GetStats() ([]StatItem, error) {
+	stats := make([]StatItem, 0)
+
+	rows, err := us.DB.Query(us.queryStats)
+	if err != nil {
+		return stats, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var quizType string
+		var numParticipations int
+		var avgTime float64
+
+		if err := rows.Scan(&quizType, &numParticipations, &avgTime); err != nil {
+			return stats, err
+		}
+		statItem := StatItem{QuizType: quizType, NumParticipations: numParticipations, AvgTime: avgTime}
+		stats = append(stats, statItem)
+	}
+
+	return stats, nil
 }

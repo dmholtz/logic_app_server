@@ -1,0 +1,16 @@
+{{define "admin_page"}}
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Admin Interface</title>
+	<link rel="stylesheet" href="/static/stylesheets/main.css">
+</head>
+<body>
+    <h1>Admin Interface</h1>
+	{{template "statistics" .}}
+	{{template "quiz" .}}
+	{{template "user" .}}
+</body>
+</html>
+{{end}}

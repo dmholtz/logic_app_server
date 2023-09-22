@@ -1,0 +1,29 @@
+{{define "statistics"}}
+<h2>Anonymous Quiz Statistics</h2>
+<!-- Iterate over tables
+     Source: https://stackoverflow.com/questions/56923511/go-html-template-table -->
+<table>
+    <tr>
+        <td><b>Quiz Type</b></td>
+        <td><b># of participations</b></td>
+        <td><b>average time to solve</b></td>
+    </tr>
+    
+    {{ range .StatItems}}
+        <tr>
+            <td>{{ .QuizType }}</td>
+            <td>{{ .NumParticipations }}</td>
+            <td>{{ .AvgTime }}</td>
+        </tr>
+    {{end}}
+    
+</table> 
+{{end}}
+
+{{define "quiz"}}
+<h2>Quiz Management</h2>
+{{end}}
+
+{{define "user"}}
+<h2>User Management</h2>
+{{end}}
