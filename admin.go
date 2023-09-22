@@ -6,6 +6,7 @@ type TemplateData struct {
 
 type StatItem struct {
 	QuizType          string
+	NumQuizzes        int
 	NumParticipations int
 	AvgTime           float64
 }

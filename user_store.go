@@ -29,6 +29,7 @@ type UserStore interface {
 	SolveQuiz(user_id int, ss SolveSubmission) (SolveSubmissionResponse, error)
 
 	GetStats() ([]StatItem, error)
+	GenerateQuiz(qc QuizProperties, isCompetition bool) (Quiz, error)
 }
 
 type MyUserStore struct {
@@ -435,13 +436,14 @@ func (us *MyUserStore) GetStats() ([]StatItem, error) {
 
 	for rows.Next() {
 		var quizType string
+		var numQuizzes int
 		var numParticipations int
 		var avgTime float64
 
-		if err := rows.Scan(&quizType, &numParticipations, &avgTime); err != nil {
+		if err := rows.Scan(&quizType, &numQuizzes, &numParticipations, &avgTime); err != nil {
 			return stats, err
 		}
-		statItem := StatItem{QuizType: quizType, NumParticipations: numParticipations, AvgTime: avgTime}
+		statItem := StatItem{QuizType: quizType, NumQuizzes: numQuizzes, NumParticipations: numParticipations, AvgTime: avgTime}
 		stats = append(stats, statItem)
 	}
 

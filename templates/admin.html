@@ -5,6 +5,7 @@
 <table>
     <tr>
         <td><b>Quiz Type</b></td>
+        <td><b># of quizzes</b></td>
         <td><b># of participations</b></td>
         <td><b>average time to solve</b></td>
     </tr>
@@ -12,6 +13,7 @@
     {{ range .StatItems}}
         <tr>
             <td>{{ .QuizType }}</td>
+            <td>{{ .NumQuizzes }}</td>
             <td>{{ .NumParticipations }}</td>
             <td>{{ .AvgTime }}</td>
         </tr>
@@ -22,8 +24,24 @@
 
 {{define "quiz"}}
 <h2>Quiz Management</h2>
+<p>Add a new random quiz for competition mode:</p>
+
+<form action="/admin/add-quiz" method="post" id="addquiz">
+    <button type="submit" form="addquiz" value="Submit">Add new Quiz</button> 
+</form>
+
 {{end}}
 
 {{define "user"}}
 <h2>User Management</h2>
+<p>Reset the password of an existing user:</p>
+
+<form action="/admin/reset-pwd" method="post" id="resetpwd">
+    <label for="uname">Username:</label>
+    <input type="text" id="uname" name="uname"><br><br>
+    <label for="pwd">New Password</label>
+    <input type="password" id="pwd" name="pwd">
+    <button type="submit" form="resetpwd" value="Submit">Submit</button> 
+</form>
+
 {{end}}

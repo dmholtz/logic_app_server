@@ -1,4 +1,5 @@
 SELECT type,
+    coalesce(COUNT(DISTINCT q.id), 0),
     coalesce(COUNT(qp.id), 0),
     coalesce(AVG(qp.time), 0)
 FROM quiz q
