@@ -25,7 +25,7 @@ func NewAdminHandler(store UserStore) *AdminHandler {
 	router := http.NewServeMux()
 	router.Handle("/", http.HandlerFunc(ah.HandleHtml))
 	router.Handle("/add-quiz", http.HandlerFunc(ah.AddQuiz))
-	router.Handle("/reset-pwd", http.HandlerFunc(ah.HandleHtml))
+	router.Handle("/reset-pwd", http.HandlerFunc(ah.ResetPassword))
 
 	// load HTML template
 	layoutPath := filepath.Join("templates", "layout.html")
@@ -71,6 +71,35 @@ func (ah *AdminHandler) AddQuiz(w http.ResponseWriter, r *http.Request) {
 	// generate random quiz
 	randomQuizProperties := RandomQuizProperties()
 	_, err := ah.userStore.GenerateQuiz(randomQuizProperties, true)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	// redirect to admin page
+	http.Redirect(w, r, "/admin", http.StatusSeeOther)
+}
+
+func (ah *AdminHandler) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		return
+	}
+
+	// get username from form
+	err := r.ParseForm()
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	username := r.FormValue("uname")
+	password := r.FormValue("pwd")
+
+	// change password in userstore
+	err = ah.userStore.ChangePassword(username, password)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

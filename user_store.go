@@ -7,6 +7,7 @@ import (
 	"log"
 	"math"
 
+	cryptrand "crypto/rand"
 	"database/sql"
 	"errors"
 	"math/rand"
@@ -30,6 +31,7 @@ type UserStore interface {
 
 	GetStats() ([]StatItem, error)
 	GenerateQuiz(qc QuizProperties, isCompetition bool) (Quiz, error)
+	ChangePassword(username string, newPassword string) error
 }
 
 type MyUserStore struct {
@@ -80,7 +82,7 @@ func (us *MyUserStore) Signup(credential Credentials) error {
 	pwdBytes := []byte(credential.Password)
 	// generate random salt
 	salt := make([]byte, 16)
-	_, err := rand.Read(salt)
+	_, err := cryptrand.Read(salt)
 	if err != nil {
 		return err
 	}
@@ -448,4 +450,32 @@ func (us *MyUserStore) GetStats() ([]StatItem, error) {
 	}
 
 	return stats, nil
+}
+
+func (us *MyUserStore) ChangePassword(username, newPassword string) error {
+	if err := us.DB.QueryRow("SELECT * FROM users WHERE username = ?", username).Err(); err != nil {
+		return errors.New("Username does not exist")
+	}
+	if len(newPassword) > 72-16 {
+		return errors.New("Password too long")
+	}
+
+	pwdBytes := []byte(newPassword)
+	// generate random salt
+	salt := make([]byte, 16)
+	_, err := cryptrand.Read(salt)
+	if err != nil {
+		return err
+	}
+	// append salt to password
+	pwdBytes = append(pwdBytes, salt...)
+	// hash password
+	hashedPwd, err := bcrypt.GenerateFromPassword(pwdBytes, bcrypt.DefaultCost)
+
+	// update hash and salt in DB
+	if _, err := us.DB.Exec("UPDATE users SET hashed_password = ?, salt  = ? WHERE username = ?", hashedPwd, salt, username); err != nil {
+		return err
+	}
+
+	return nil
 }
