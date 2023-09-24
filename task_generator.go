@@ -146,7 +146,7 @@ func generateEquiv(qp QuizProperties) Quiz {
 	equivBuilder := b.NewEquivalentFormulaBuilder(qp.NumVars, qp.NumVars+2)
 	// enforce the correct scope
 	for len(equivBuilder.BaseFormula.Scope())+1 != qp.NumVars {
-		equivBuilder = b.NewEquivalentFormulaBuilder(qp.NumVars, 6)
+		equivBuilder = b.NewEquivalentFormulaBuilder(qp.NumVars, qp.NumVars+2)
 	}
 
 	answerFormulas := make([]l.LogicNode, 0)
